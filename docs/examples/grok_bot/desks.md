@@ -1,8 +1,10 @@
 # Grok Bot desks (copy-paste Routines)
 
-One desk = one top-5 skill. Do not hardcode a `grok-*` model id. DSA already has the YAML; the Bot only passes `skills`.
+One desk = one top-5 skill. Do not hardcode a `grok-*` model id. DSA already has the YAML; the Bot only passes `skills`. Follow `SKILL.md` for ranking, picker, always-on strategy plan, and JSON shape.
 
 Set `DSA_BASE_URL`. Prefer DecisionSignal. Re-analyze only on the morning Routine or when asked. Keep replies as the compact JSON in `SKILL.md`. Mail/notify and the DSA web/desktop report always include the strategy plan.
+
+Picker: named WR/id → that desk; else Patience → Mom break → plain 55d → BB reclaim → Super Bot. Never mix skills. Drop Weather / Adaptive / Tactical / Hold.
 
 ## Shared poll
 

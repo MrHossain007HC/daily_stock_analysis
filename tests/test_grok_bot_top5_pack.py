@@ -52,6 +52,9 @@ class TestGrokBotTop5Pack(unittest.TestCase):
         self.assertNotRegex(skill_md, r"`adaptive")
         self.assertIn("Never call Apify", skill_md)
         self.assertIn("strategy plan", skill_md.lower())
+        self.assertIn("Desk picker", skill_md)
+        self.assertIn("Always mention the strategy plan", skill_md)
+        self.assertIn("Hold books", skill_md)
 
     def test_strategy_plan_always_present_even_without_sniper(self) -> None:
         result = AnalysisResult(
