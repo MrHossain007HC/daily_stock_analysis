@@ -6,7 +6,7 @@ A股自选股智能分析系统 - 搜索服务模块
 
 职责：
 1. 提供统一的新闻搜索接口
-2. 支持 Bocha、Tavily、Brave、SerpAPI、SearXNG 多种搜索引擎
+2. 支持 Bocha、Tavily、Brave、SerpAPI、SearXNG、可选 Apify 多种搜索引擎
 3. 多 Key 负载均衡和故障转移
 4. 搜索结果缓存和格式化
 """
@@ -20,7 +20,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Mapping
 from itertools import cycle
 from urllib.parse import parse_qsl, unquote, urlparse
 import requests
@@ -2230,6 +2230,218 @@ class SearXNGSearchProvider(BaseSearchProvider):
         )
 
 
+class ApifySearchProvider(BaseSearchProvider):
+    """Last-resort Apify Actor search (optional ``APIFY_TOKEN``).
+
+    Uses the Actor HTTP API directly (no ``apify-client`` dependency). When this
+    provider runs, it chains rag-web-browser, web-fetch, and (for US tickers)
+    yahoo-finance-scraper, then compresses each hit to title / snippet<=240 / url.
+    Fail-open: any Actor error is logged and skipped.
+    """
+
+    _API_BASE = "https://api.apify.com/v2/acts"
+    _SNIPPET_LIMIT = 240
+    _ACTOR_TIMEOUT_SECONDS = 25
+    _TOTAL_BUDGET_SECONDS = 45
+    _SEARCH_ACTOR = "apify/rag-web-browser"
+    _FETCH_ACTOR = "apify/web-fetch"
+    _YAHOO_ACTOR = "kaix/yahoo-finance-scraper"
+    _TICKER_RE = re.compile(r"\b([A-Z]{1,5})(?:\.(?:US|NYSE|NASDAQ))?\b")
+
+    def __init__(self, api_keys: List[str]):
+        super().__init__(api_keys, "Apify")
+
+    @staticmethod
+    def _actor_path(actor_id: str) -> str:
+        return actor_id.replace("/", "~")
+
+    @staticmethod
+    def _clip_snippet(value: Any) -> str:
+        text = " ".join(str(value or "").split())
+        if len(text) <= ApifySearchProvider._SNIPPET_LIMIT:
+            return text
+        return text[: ApifySearchProvider._SNIPPET_LIMIT - 1].rstrip() + "…"
+
+    @staticmethod
+    def _extract_domain(url: str) -> str:
+        try:
+            parsed = urlparse(url)
+            domain = parsed.netloc.replace("www.", "")
+            return domain or "Apify"
+        except Exception:
+            return "Apify"
+
+    def _run_actor(
+        self,
+        actor_id: str,
+        api_key: str,
+        payload: Dict[str, Any],
+        timeout_seconds: int,
+    ) -> List[Dict[str, Any]]:
+        url = f"{self._API_BASE}/{self._actor_path(actor_id)}/run-sync-get-dataset-items"
+        try:
+            response = requests.post(
+                url,
+                params={"token": api_key, "timeout": max(1, timeout_seconds)},
+                json=payload,
+                timeout=timeout_seconds + 5,
+            )
+        except requests.RequestException as exc:
+            logger.warning("[Apify] actor %s request failed: %s", actor_id, exc)
+            return []
+        if response.status_code >= 400:
+            logger.warning(
+                "[Apify] actor %s HTTP %s: %s",
+                actor_id,
+                response.status_code,
+                (response.text or "")[:200],
+            )
+            return []
+        try:
+            data = response.json()
+        except ValueError:
+            logger.warning("[Apify] actor %s returned non-JSON", actor_id)
+            return []
+        if isinstance(data, list):
+            return [item for item in data if isinstance(item, dict)]
+        if isinstance(data, dict):
+            for key in ("items", "data", "results"):
+                inner = data.get(key)
+                if isinstance(inner, list):
+                    return [item for item in inner if isinstance(item, dict)]
+        return []
+
+    def _item_to_result(self, item: Mapping[str, Any], *, source_fallback: str) -> Optional[SearchResult]:
+        title = str(
+            item.get("title")
+            or item.get("headline")
+            or item.get("name")
+            or item.get("text")
+            or ""
+        ).strip()
+        url = str(
+            item.get("url")
+            or item.get("requestUrl")
+            or item.get("loadedUrl")
+            or item.get("link")
+            or ""
+        ).strip()
+        snippet_raw = (
+            item.get("markdown")
+            or item.get("text")
+            or item.get("description")
+            or item.get("snippet")
+            or item.get("content")
+            or item.get("summary")
+            or title
+        )
+        snippet = self._clip_snippet(snippet_raw)
+        if not title and snippet:
+            title = snippet[:80]
+        if not title and not url:
+            return None
+        return SearchResult(
+            title=title or url,
+            snippet=snippet,
+            url=url,
+            source=self._extract_domain(url) if url else source_fallback,
+            published_date=str(item.get("date") or item.get("publishedDate") or "").strip() or None,
+        )
+
+    def _yahoo_tickers(self, query: str) -> List[str]:
+        found: List[str] = []
+        for match in self._TICKER_RE.findall(query or ""):
+            token = match.strip().upper()
+            if token and token not in found and token not in {"US", "USD", "NEWS", "THE", "AND", "FOR"}:
+                found.append(token)
+        return found[:3]
+
+    def _do_search(
+        self,
+        query: str,
+        api_key: str,
+        max_results: int,
+        days: int = 7,
+        **search_kwargs: Any,
+    ) -> SearchResponse:
+        deadline = time.monotonic() + self._TOTAL_BUDGET_SECONDS
+        collected: List[SearchResult] = []
+        seen_urls = set()
+
+        def remaining() -> int:
+            return max(1, int(min(self._ACTOR_TIMEOUT_SECONDS, deadline - time.monotonic())))
+
+        def absorb(items: List[Dict[str, Any]], source_fallback: str) -> None:
+            for item in items:
+                if len(collected) >= max_results:
+                    return
+                result = self._item_to_result(item, source_fallback=source_fallback)
+                if result is None:
+                    continue
+                key = result.url or result.title
+                if key in seen_urls:
+                    continue
+                seen_urls.add(key)
+                collected.append(result)
+
+        search_items = self._run_actor(
+            self._SEARCH_ACTOR,
+            api_key,
+            {
+                "query": query,
+                "maxResults": max(1, max_results),
+                "outputFormats": ["text"],
+                "requestTimeoutSecs": remaining(),
+            },
+            remaining(),
+        )
+        absorb(search_items, "apify/rag-web-browser")
+
+        short_hits = [item for item in collected if item.url and len(item.snippet) < 80][:2]
+        if short_hits and time.monotonic() < deadline:
+            for hit in short_hits:
+                if time.monotonic() >= deadline:
+                    break
+                fetched = self._run_actor(
+                    self._FETCH_ACTOR,
+                    api_key,
+                    {"url": hit.url, "startUrls": [{"url": hit.url}]},
+                    remaining(),
+                )
+                if not fetched:
+                    continue
+                extra = self._item_to_result(fetched[0], source_fallback="apify/web-fetch")
+                if extra and extra.snippet:
+                    hit.snippet = extra.snippet
+                    if extra.title and extra.title != extra.url:
+                        hit.title = extra.title
+
+        tickers = self._yahoo_tickers(query)
+        if tickers and time.monotonic() < deadline:
+            yahoo_items = self._run_actor(
+                self._YAHOO_ACTOR,
+                api_key,
+                {"tickers": tickers, "news": True},
+                remaining(),
+            )
+            absorb(yahoo_items, "kaix/yahoo-finance-scraper")
+
+        if not collected:
+            return SearchResponse(
+                query=query,
+                results=[],
+                provider=self.name,
+                success=False,
+                error_message="Apify actors returned no usable items",
+            )
+        return SearchResponse(
+            query=query,
+            results=collected[:max_results],
+            provider=self.name,
+            success=True,
+        )
+
+
 class SearchService:
     """
     搜索服务
@@ -2401,6 +2613,7 @@ class SearchService:
         searxng_base_urls: Optional[List[str]] = None,
         searxng_public_instances_enabled: bool = False,
         searxng_timeout_seconds: Optional[int] = None,
+        apify_tokens: Optional[List[str]] = None,
         news_max_age_days: int = 3,
         news_strategy_profile: str = "short",
     ):
@@ -2416,6 +2629,7 @@ class SearchService:
             minimax_keys: MiniMax API Key 列表
             searxng_base_urls: SearXNG 实例地址列表（自建无配额兜底）
             searxng_public_instances_enabled: 未配置自建实例时，是否自动使用公共 SearXNG 实例
+            apify_tokens: Apify API token 列表（最后兜底，可选）
             news_max_age_days: 新闻最大时效（天）
             news_strategy_profile: 新闻窗口策略档位（ultra_short/short/medium/long）
         """
@@ -2429,6 +2643,7 @@ class SearchService:
             "searxng_base_urls": list(searxng_base_urls or []),
             "searxng_public_instances_enabled": bool(searxng_public_instances_enabled),
             "searxng_timeout_seconds": searxng_timeout_seconds,
+            "apify_tokens": list(apify_tokens or []),
             "news_max_age_days": int(news_max_age_days),
             "news_strategy_profile": news_strategy_profile,
         }
@@ -2493,6 +2708,11 @@ class SearchService:
         if anspire_keys:
             self._providers.insert(0, AnspireSearchProvider(anspire_keys))
             logger.info(f"已配置 Anspire Search 搜索，共 {len(anspire_keys)} 个 API Key")
+
+        # 8. Apify Actors（最后兜底；配置后按最大 Actor 能力检索并压缩结果）
+        if apify_tokens:
+            self._providers.append(ApifySearchProvider(apify_tokens))
+            logger.info("已配置 Apify 搜索兜底，共 %s 个 token", len(apify_tokens))
             
         if not self._providers:
             logger.warning("未配置任何搜索能力，新闻搜索功能将不可用")
@@ -4910,6 +5130,7 @@ def get_search_service() -> SearchService:
                     searxng_base_urls=config.searxng_base_urls,
                     searxng_public_instances_enabled=config.searxng_public_instances_enabled,
                     searxng_timeout_seconds=getattr(config, "searxng_timeout_seconds", None),
+                    apify_tokens=getattr(config, "apify_tokens", None),
                     news_max_age_days=config.news_max_age_days,
                     news_strategy_profile=getattr(config, "news_strategy_profile", "short"),
                 )

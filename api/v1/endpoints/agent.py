@@ -89,6 +89,7 @@ class SkillInfo(BaseModel):
     id: str
     name: str
     description: str
+    grok_bot_pack: bool = False
 
 class SkillsResponse(BaseModel):
     skills: List[SkillInfo]
@@ -167,8 +168,15 @@ def _build_skills_response(config) -> SkillsResponse:
             skill.name,
         ),
     )
+    from src.agent.skills.grok_bot_pack import is_grok_bot_pack_skill
+
     skills = [
-        SkillInfo(id=skill.name, name=skill.display_name, description=skill.description)
+        SkillInfo(
+            id=skill.name,
+            name=skill.display_name,
+            description=skill.description,
+            grok_bot_pack=is_grok_bot_pack_skill(skill.name),
+        )
         for skill in available_skills
     ]
     return SkillsResponse(

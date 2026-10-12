@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- [新功能] Grok Bot 包收敛为 5 个带胜率命名的策略（`brk55_mom_wr627` 等），并提供一 desk 一 skill 的 Routine 示例；Bot 只消费既有 REST，不新增 `GROK_BOT_*`。
+- [新功能] 可选 `APIFY_TOKEN` 作为搜索链路最后兜底，配置后按最大 Actor 能力检索并压缩结果；Grok Bot 不直接调用 Apify。
+- [改进] 邮件 / Markdown / 企业微信 / brief 报告始终包含策略计划（策略名+胜率、理想买入/止损/目标）；`summary_only` 邮件摘要也保留 compact 计划，点位缺失时显示 N/A，不把建仓详情塞回摘要。
+- [改进] Web / 桌面报告始终展示策略计划（策略名+胜率、理想买入/止损/目标），Grok Bot top-5 在策略选择器中标记 WR；Ask 命令同样始终带上策略计划。
+- [文档] 将 Grok Bot Skill 写成可粘贴的完整操作简报（排名来源、desk 选择、始终输出策略计划、JSON 低 token）。
 - [新功能] Web/API runtime scheduler 硬超时后扫描已落库分析历史，**默认发送**部分完成通知（`DSA_TIMEOUT_PARTIAL_NOTIFY` 未设置或为 true；此前超时不推送已落库个股），并在 `last_error` 中记录 `completed/pending` 摘要；可用 `DSA_TIMEOUT_PARTIAL_NOTIFY=false` 关闭推送（Refs #2328）。
 - [测试] 修复股票名称解析冷启动超时并发测试的同步竞态：在放行后台抓取前确认两个等待者均已结束并返回空结果，避免 Docker 发布门禁偶发失败。
 - [文档] 将仓库内所有 SerpApi 链接统一更新为新的赞助转化追踪地址。

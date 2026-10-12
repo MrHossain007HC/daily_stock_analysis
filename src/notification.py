@@ -53,6 +53,8 @@ from src.report_language import (
     localize_trend_prediction,
     normalize_report_language,
     normalize_strategy_synthesis_payload,
+    resolve_strategy_plan,
+    format_strategy_plan_compact,
     strategy_invalid_opinion_count,
 )
 from src.schemas.decision_action import (
@@ -129,6 +131,38 @@ def _format_strategy_skill_items(items: Any, report_language: str = "zh") -> str
             suffix += f"/{confidence:.0%}"
         formatted.append(f"{localize_strategy_skill(skill_id, report_language)}{suffix}")
     return "、".join(formatted) if formatted else none_text
+
+
+def _append_strategy_plan_block(
+    lines: List[str],
+    result: Any,
+    labels: Dict[str, str],
+    report_language: str,
+    *,
+    compact: bool = False,
+) -> None:
+    """Always append the strategy plan (name + WR + entry/stop/target)."""
+    plan = resolve_strategy_plan(result, report_language)
+    if compact:
+        lines.append(format_strategy_plan_compact(result, report_language))
+        lines.append("")
+        return
+    lines.extend([
+        f"### 🎯 {labels.get('strategy_plan_heading', labels.get('battle_plan_heading', '策略计划'))}",
+        "",
+        f"- {labels.get('strategy_name_label', '策略')}: {plan['strategy_name']}",
+        "",
+        f"**📍 {labels['action_points_heading']}**",
+        "",
+        f"| {labels['action_points_heading']} | {labels['current_price_label']} |",
+        "|---------|------|",
+        f"| 🎯 {labels['ideal_buy_label']} | {plan['ideal_buy']} |",
+        f"| 🔵 {labels['secondary_buy_label']} | {plan['secondary_buy']} |",
+        f"| 🛑 {labels['stop_loss_label']} | {plan['stop_loss']} |",
+        f"| 🎊 {labels['take_profit_label']} | {plan['take_profit']} |",
+        f"| 📌 {labels['entry_plan_label']} | {plan['entry_plan']} |",
+        "",
+    ])
 
 
 def _append_strategy_synthesis_block(lines: List[str], strategy_synthesis: Any, labels: Dict[str, str], report_language: str) -> None:
@@ -1332,6 +1366,7 @@ class NotificationService(
                     f"{labels['score_label']} {r.sentiment_score} | "
                     f"{localize_trend_prediction(r.trend_prediction, report_language)}"
                 )
+                _append_strategy_plan_block(report_lines, r, labels, report_language, compact=True)
                 if self._report_summary_only:
                     news_disclosure = self._empty_news_disclosure(r, report_language)
                     if news_disclosure:
@@ -1489,27 +1524,10 @@ class NotificationService(
 
                 self._append_phase_decision_block(report_lines, dashboard, labels)
 
-                # ========== 作战计划 ==========
+                # ========== 策略计划（邮件始终包含）==========
+                _append_strategy_plan_block(report_lines, result, labels, report_language)
                 battle = dashboard.get('battle_plan', {}) if dashboard else {}
                 if battle:
-                    report_lines.extend([
-                        f"### 🎯 {labels['battle_plan_heading']}",
-                        "",
-                    ])
-                    # 狙击点位
-                    sniper = battle.get('sniper_points', {})
-                    if sniper:
-                        report_lines.extend([
-                            f"**📍 {labels['action_points_heading']}**",
-                            "",
-                            f"| {labels['action_points_heading']} | {labels['current_price_label']} |",
-                            "|---------|------|",
-                            f"| 🎯 {labels['ideal_buy_label']} | {self._clean_sniper_value(sniper.get('ideal_buy', 'N/A'))} |",
-                            f"| 🔵 {labels['secondary_buy_label']} | {self._clean_sniper_value(sniper.get('secondary_buy', 'N/A'))} |",
-                            f"| 🛑 {labels['stop_loss_label']} | {self._clean_sniper_value(sniper.get('stop_loss', 'N/A'))} |",
-                            f"| 🎊 {labels['take_profit_label']} | {self._clean_sniper_value(sniper.get('take_profit', 'N/A'))} |",
-                            "",
-                        ])
                     # 仓位策略
                     position = battle.get('position_strategy', {})
                     if position:
@@ -1679,6 +1697,7 @@ class NotificationService(
                 news_disclosure = self._empty_news_disclosure(r, report_language)
                 if news_disclosure:
                     lines.append(news_disclosure)
+                _append_strategy_plan_block(lines, r, labels, report_language, compact=True)
         else:
             for result in sorted_results:
                 signal_text, signal_emoji, _ = self._get_signal_level(result)
@@ -1738,22 +1757,7 @@ class NotificationService(
                         lines.append(f"   • {cat_text}")
                     lines.append("")
 
-                # 狙击点位
-                sniper = battle.get('sniper_points', {}) if battle else {}
-                if sniper:
-                    ideal_buy = str(sniper.get('ideal_buy', ''))
-                    stop_loss = str(sniper.get('stop_loss', ''))
-                    take_profit = str(sniper.get('take_profit', ''))
-                    points = []
-                    if ideal_buy:
-                        points.append(f"🎯{labels['ideal_buy_label']}:{ideal_buy[:15]}")
-                    if stop_loss:
-                        points.append(f"🛑{labels['stop_loss_label']}:{stop_loss[:15]}")
-                    if take_profit:
-                        points.append(f"🎊{labels['take_profit_label']}:{take_profit[:15]}")
-                    if points:
-                        lines.append(" | ".join(points))
-                        lines.append("")
+                _append_strategy_plan_block(lines, result, labels, report_language, compact=True)
 
                 # 持仓建议
                 pos_advice = core.get('position_advice', {}) if core else {}
@@ -1944,6 +1948,7 @@ class NotificationService(
                 f"{signal_text} | "
                 f"{labels['score_label']} {r.sentiment_score} | {one}"
             )
+            _append_strategy_plan_block(lines, r, labels, report_language, compact=True)
             news_disclosure = self._empty_news_disclosure(r, report_language)
             if news_disclosure:
                 lines.append(news_disclosure)
@@ -1974,7 +1979,6 @@ class NotificationService(
         signal_text, signal_emoji, _ = self._get_signal_level(result)
         dashboard = result.dashboard if hasattr(result, 'dashboard') and result.dashboard else {}
         core = dashboard.get('core_conclusion', {}) if dashboard else {}
-        battle = dashboard.get('battle_plan', {}) if dashboard else {}
         intel = dashboard.get('intelligence', {}) if dashboard else {}
 
         # 股票名称（转义 *ST 等特殊字符）
@@ -2049,20 +2053,7 @@ class NotificationService(
         if info_added:
             lines.append("")
 
-        # 狙击点位
-        sniper = battle.get('sniper_points', {}) if battle else {}
-        if sniper:
-            lines.extend([
-                f"### 🎯 {labels['action_points_heading']}",
-                "",
-                f"| {labels['ideal_buy_label']} | {labels['stop_loss_label']} | {labels['take_profit_label']} |",
-                "|------|------|------|",
-            ])
-            ideal_buy = sniper.get('ideal_buy', '-')
-            stop_loss = sniper.get('stop_loss', '-')
-            take_profit = sniper.get('take_profit', '-')
-            lines.append(f"| {ideal_buy} | {stop_loss} | {take_profit} |")
-            lines.append("")
+        _append_strategy_plan_block(lines, result, labels, report_language)
 
         # ========== 信号归因分析 ==========
         signal_attr = dashboard.get('signal_attribution', {}) if dashboard else {}

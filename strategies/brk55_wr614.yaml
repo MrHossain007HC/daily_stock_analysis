@@ -1,0 +1,23 @@
+# Break 55 / 突破55日高点  WR61.4%
+
+name: brk55_wr614
+display_name: BRK55 WR61.4%
+description: 55-day high break without extra momentum overlay. Sel WR 61.4% PF 2.66. Grok Bot top-5 pack.
+category: trend
+core_rules: [2, 3]
+required_tools:
+  - get_daily_history
+  - analyze_trend
+aliases: [brk55, break55, WR61.4]
+default_active: false
+default_router: false
+default_priority: 12
+market_regimes: [trending_up]
+
+instructions: |
+  **BRK55 WR61.4%** (Sel PF 2.66). Keep output short.
+
+  Entry: close > 55-day high. Volume confirmation preferred but not required.
+  Filter: skip if price already extended >5% above MA5. No extra momentum overlay.
+  Exit: take-profit ~2.5R, stop ~2.0R or close back below 55d high, time-stop hold_days.
+  Output: action + ideal_buy + stop_loss + take_profit + 1-line plan. Name this strategy and WR61.4% in buy_reason.

@@ -25,6 +25,7 @@ import unicodedata
 import uuid
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Optional, Union, Dict, Any
 
 from fastapi import APIRouter, HTTPException, Depends, Query, Body
@@ -78,7 +79,11 @@ from src.market_phase_summary import (
 )
 from src.services.stock_code_utils import is_code_like, resolve_index_stock_code_for_analysis
 from src.services.stock_list_parser import ParseStatus, parse_analysis_target
-from src.report_language import get_localized_stock_name, normalize_report_language
+from src.report_language import (
+    build_report_strategy_payload,
+    get_localized_stock_name,
+    normalize_report_language,
+)
 from src.schemas.decision_action import build_action_fields
 from src.services.name_to_code_resolver import resolve_name_to_code
 from src.services.task_queue import (
@@ -1377,10 +1382,16 @@ def get_analysis_status(task_id: str) -> TaskStatus:
                     analysis_summary=record.analysis_summary,
                 ),
                 strategy=ReportStrategy(
+                    strategy_name=_stringify_report_strategy_value(
+                        getattr(record, 'strategy_name', None)
+                    ),
                     ideal_buy=_stringify_report_strategy_value(getattr(record, 'ideal_buy', None)),
                     secondary_buy=_stringify_report_strategy_value(getattr(record, 'secondary_buy', None)),
                     stop_loss=_stringify_report_strategy_value(getattr(record, 'stop_loss', None)),
                     take_profit=_stringify_report_strategy_value(getattr(record, 'take_profit', None)),
+                    entry_plan=_stringify_report_strategy_value(
+                        getattr(record, 'entry_plan', None)
+                    ),
                 ),
                 details=details,
             ).model_dump()
@@ -1585,14 +1596,26 @@ def _build_analysis_report(
         sentiment_label=summary_data.get("sentiment_label")
     )
 
-    strategy = None
-    if strategy_data:
-        strategy = ReportStrategy(
-            ideal_buy=_stringify_report_strategy_value(strategy_data.get("ideal_buy")),
-            secondary_buy=_stringify_report_strategy_value(strategy_data.get("secondary_buy")),
-            stop_loss=_stringify_report_strategy_value(strategy_data.get("stop_loss")),
-            take_profit=_stringify_report_strategy_value(strategy_data.get("take_profit"))
-        )
+    plan_dashboard = {}
+    if isinstance(raw_result_data, dict):
+        candidate = raw_result_data.get("dashboard")
+        if isinstance(candidate, dict):
+            plan_dashboard = candidate
+        elif isinstance(raw_result_data.get("battle_plan"), dict):
+            plan_dashboard = raw_result_data
+    strategy_payload = build_report_strategy_payload(
+        SimpleNamespace(dashboard=plan_dashboard),
+        report_language,
+        extra=strategy_data if isinstance(strategy_data, dict) else {},
+    )
+    strategy = ReportStrategy(
+        strategy_name=_stringify_report_strategy_value(strategy_payload.get("strategy_name")),
+        ideal_buy=_stringify_report_strategy_value(strategy_payload.get("ideal_buy")),
+        secondary_buy=_stringify_report_strategy_value(strategy_payload.get("secondary_buy")),
+        stop_loss=_stringify_report_strategy_value(strategy_payload.get("stop_loss")),
+        take_profit=_stringify_report_strategy_value(strategy_payload.get("take_profit")),
+        entry_plan=_stringify_report_strategy_value(strategy_payload.get("entry_plan")),
+    )
 
     extracted_fundamental = extract_fundamental_detail_fields(
         context_snapshot=context_snapshot,

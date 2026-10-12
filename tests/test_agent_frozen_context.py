@@ -119,7 +119,9 @@ class DesktopBackendPackagingAssetsTestCase(unittest.TestCase):
         strategies_dir = self.repo_root / "strategies"
         strategy_names = sorted(path.stem for path in strategies_dir.glob("*.yaml"))
 
-        self.assertEqual(len(strategy_names), 15)
+        self.assertEqual(len(strategy_names), 20)
+        self.assertIn("brk55_mom_wr627", strategy_names)
+        self.assertIn("patience_named_reason_wr603", strategy_names)
         self.assertIn("bottom_volume", strategy_names)
         self.assertIn("chan_theory", strategy_names)
         self.assertIn("ma_golden_cross", strategy_names)

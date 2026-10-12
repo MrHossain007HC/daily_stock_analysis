@@ -533,11 +533,12 @@ const HomePage: React.FC = () => {
   );
   const strategyOptions = useMemo(
     () => [
-      { id: '', name: t('home.defaultStrategyName'), description: t('home.defaultStrategyDescription') },
+      { id: '', name: t('home.defaultStrategyName'), description: t('home.defaultStrategyDescription'), grokBotPack: false },
       ...analysisSkills.map((skill) => ({
         id: skill.id,
         name: skill.name,
         description: skill.description,
+        grokBotPack: Boolean(skill.grok_bot_pack),
       })),
     ],
     [analysisSkills, t],
@@ -1585,7 +1586,12 @@ const HomePage: React.FC = () => {
                           >
                             <Check className={`mt-0.5 h-4 w-4 flex-shrink-0 ${selected ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true" />
                             <span className="min-w-0">
-                              <span className="block font-medium">{option.name}</span>
+                              <span className="flex items-center gap-1.5">
+                                <span className="block font-medium">{option.name}</span>
+                                {option.grokBotPack ? (
+                                  <span className="rounded bg-hover px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-text">WR</span>
+                                ) : null}
+                              </span>
                               <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-muted-text">{option.description}</span>
                             </span>
                           </button>

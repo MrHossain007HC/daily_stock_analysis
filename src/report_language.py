@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from src.schemas.decision_scale import signal_key_for_score
 
@@ -240,6 +240,21 @@ _STRATEGY_SKILL_CANONICAL_MAP = {
     "wave theory": "wave_theory",
     "wave_theory": "wave_theory",
     "波浪理论": "wave_theory",
+    "brk55_mom_wr627": "brk55_mom_wr627",
+    "brk55 mom wr627": "brk55_mom_wr627",
+    "brk55 mom wr62.7%": "brk55_mom_wr627",
+    "brk55_wr614": "brk55_wr614",
+    "brk55 wr614": "brk55_wr614",
+    "brk55 wr61.4%": "brk55_wr614",
+    "bb_reclaim_brk55_wr609": "bb_reclaim_brk55_wr609",
+    "bb reclaim brk55 wr609": "bb_reclaim_brk55_wr609",
+    "bb reclaim brk55 wr60.9%": "bb_reclaim_brk55_wr609",
+    "patience_named_reason_wr603": "patience_named_reason_wr603",
+    "patience named reason wr603": "patience_named_reason_wr603",
+    "patience named reason wr60.3%": "patience_named_reason_wr603",
+    "superbot_learner_wr548": "superbot_learner_wr548",
+    "superbot learner wr548": "superbot_learner_wr548",
+    "super bot learner wr54.8%": "superbot_learner_wr548",
 }
 
 _STRATEGY_SKILL_TRANSLATIONS = {
@@ -258,6 +273,31 @@ _STRATEGY_SKILL_TRANSLATIONS = {
     "one_yang_three_yin": {"zh": "一阳三阴", "en": "One Yang Three Yin", "ko": "일양삼음"},
     "shrink_pullback": {"zh": "缩量回踩", "en": "Shrink Pullback", "ko": "거래량 축소 눌림"},
     "wave_theory": {"zh": "波浪理论", "en": "Wave Theory", "ko": "파동 이론"},
+    "brk55_mom_wr627": {
+        "zh": "BRK55 Mom WR62.7%",
+        "en": "BRK55 Mom WR62.7%",
+        "ko": "BRK55 Mom WR62.7%",
+    },
+    "brk55_wr614": {
+        "zh": "BRK55 WR61.4%",
+        "en": "BRK55 WR61.4%",
+        "ko": "BRK55 WR61.4%",
+    },
+    "bb_reclaim_brk55_wr609": {
+        "zh": "BB Reclaim BRK55 WR60.9%",
+        "en": "BB Reclaim BRK55 WR60.9%",
+        "ko": "BB Reclaim BRK55 WR60.9%",
+    },
+    "patience_named_reason_wr603": {
+        "zh": "Patience Named Reason WR60.3%",
+        "en": "Patience Named Reason WR60.3%",
+        "ko": "Patience Named Reason WR60.3%",
+    },
+    "superbot_learner_wr548": {
+        "zh": "Super Bot Learner WR54.8%",
+        "en": "Super Bot Learner WR54.8%",
+        "ko": "Super Bot Learner WR54.8%",
+    },
 }
 
 _CHIP_HEALTH_CANONICAL_MAP = {
@@ -424,6 +464,8 @@ _REPORT_LABELS: Dict[str, Dict[str, str]] = {
         "confidence_reason_label": "置信度理由",
         "data_limitations_label": "数据限制",
         "battle_plan_heading": "作战计划",
+        "strategy_plan_heading": "策略计划",
+        "strategy_name_label": "策略",
         "ideal_buy_label": "理想买入点",
         "secondary_buy_label": "次优买入点",
         "stop_loss_label": "止损位",
@@ -559,6 +601,8 @@ _REPORT_LABELS: Dict[str, Dict[str, str]] = {
         "confidence_reason_label": "Confidence Reason",
         "data_limitations_label": "Data Limitations",
         "battle_plan_heading": "Battle Plan",
+        "strategy_plan_heading": "Strategy Plan",
+        "strategy_name_label": "Strategy",
         "ideal_buy_label": "Ideal Entry",
         "secondary_buy_label": "Secondary Entry",
         "stop_loss_label": "Stop Loss",
@@ -694,6 +738,8 @@ _REPORT_LABELS: Dict[str, Dict[str, str]] = {
         "confidence_reason_label": "신뢰도 근거",
         "data_limitations_label": "데이터 한계",
         "battle_plan_heading": "실행 계획",
+        "strategy_plan_heading": "전략 계획",
+        "strategy_name_label": "전략",
         "ideal_buy_label": "이상적 매수가",
         "secondary_buy_label": "추가 매수가",
         "stop_loss_label": "손절가",
@@ -1036,6 +1082,119 @@ def localize_strategy_skill(value: Any, language: Optional[str]) -> str:
         language,
         canonical_map=_STRATEGY_SKILL_CANONICAL_MAP,
         translations=_STRATEGY_SKILL_TRANSLATIONS,
+    )
+
+
+def _strategy_plan_point(value: Any) -> str:
+    if value is None:
+        return "N/A"
+    if isinstance(value, (int, float)):
+        return str(value)
+    text = str(value).strip()
+    if not text:
+        return "N/A"
+    prefixes = (
+        "理想买入点：", "次优买入点：", "止损位：", "目标位：",
+        "理想买入点:", "次优买入点:", "止损位:", "目标位:",
+        "Ideal Entry:", "Secondary Entry:", "Stop Loss:", "Target:",
+    )
+    for prefix in prefixes:
+        if text.startswith(prefix):
+            text = text[len(prefix):].strip()
+            break
+    return text or "N/A"
+
+
+def _collect_strategy_plan_names(dashboard: Dict[str, Any], language: Optional[str], none_text: str) -> str:
+    synthesis = normalize_strategy_synthesis_payload(dashboard.get("strategy_synthesis"))
+    names: List[str] = []
+    if synthesis:
+        for key in ("supporting_skills", "opposing_skills"):
+            items = synthesis.get(key) or []
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                skill_id = str(item.get("skill_id") or "").strip()
+                if not skill_id:
+                    continue
+                localized = localize_strategy_skill(skill_id, language)
+                if localized and localized not in names:
+                    names.append(localized)
+    battle = dashboard.get("battle_plan") if isinstance(dashboard.get("battle_plan"), dict) else {}
+    explicit = str((battle or {}).get("strategy_name") or "").strip()
+    if explicit and explicit not in names:
+        names.insert(0, explicit)
+    return "、".join(names) if names else none_text
+
+
+def resolve_strategy_plan(result: Any, language: Optional[str] = None) -> Dict[str, str]:
+    """Always-on strategy plan fields for mail and compact notifications."""
+    labels = get_report_labels(language)
+    none_text = labels.get("none_label", "N/A")
+    dashboard = getattr(result, "dashboard", None)
+    if not isinstance(dashboard, dict):
+        dashboard = {}
+    battle = dashboard.get("battle_plan") if isinstance(dashboard.get("battle_plan"), dict) else {}
+    sniper = battle.get("sniper_points") if isinstance(battle.get("sniper_points"), dict) else {}
+    position = battle.get("position_strategy") if isinstance(battle.get("position_strategy"), dict) else {}
+    return {
+        "strategy_name": _collect_strategy_plan_names(dashboard, language, none_text),
+        "ideal_buy": _strategy_plan_point(sniper.get("ideal_buy")),
+        "secondary_buy": _strategy_plan_point(sniper.get("secondary_buy")),
+        "stop_loss": _strategy_plan_point(sniper.get("stop_loss")),
+        "take_profit": _strategy_plan_point(sniper.get("take_profit")),
+        "entry_plan": _strategy_plan_point(position.get("entry_plan") or battle.get("entry_plan")),
+    }
+
+
+def build_report_strategy_payload(
+    result: Any,
+    language: Optional[str] = None,
+    extra: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Optional[str]]:
+    """API/Web strategy-plan payload. Missing points stay None (UI shows em-dash)."""
+    labels = get_report_labels(language)
+    none_text = labels.get("none_label", "N/A")
+    plan = resolve_strategy_plan(result, language)
+    overlay = extra if isinstance(extra, dict) else {}
+
+    def _opt(value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return str(value)
+        text = str(value).strip()
+        if not text or text in {"N/A", none_text, "—", "-"}:
+            return None
+        return text
+
+    payload = {
+        "strategy_name": _opt(overlay.get("strategy_name") or plan["strategy_name"]),
+        "ideal_buy": _opt(overlay.get("ideal_buy") or plan["ideal_buy"]),
+        "secondary_buy": _opt(overlay.get("secondary_buy") or plan["secondary_buy"]),
+        "stop_loss": _opt(overlay.get("stop_loss") or plan["stop_loss"]),
+        "take_profit": _opt(overlay.get("take_profit") or plan["take_profit"]),
+        "entry_plan": _opt(overlay.get("entry_plan") or plan["entry_plan"]),
+    }
+    return payload
+
+
+def format_strategy_plan_compact(result: Any, language: Optional[str] = None) -> str:
+    """One-line strategy plan for summary / WeChat / brief mail.
+
+    Omits entry_plan so ``summary_only`` reports do not restore detail-only
+    battle fields; full mail still shows entry in the strategy-plan table.
+    """
+    labels = get_report_labels(language)
+    plan = resolve_strategy_plan(result, language)
+    return (
+        f"{labels.get('strategy_plan_heading', 'Strategy Plan')}: "
+        f"{labels.get('strategy_name_label', 'Strategy')} {plan['strategy_name']} | "
+        f"{labels.get('ideal_buy_label', 'Ideal Entry')}:{plan['ideal_buy']} | "
+        f"{labels.get('stop_loss_label', 'Stop Loss')}:{plan['stop_loss']} | "
+        f"{labels.get('take_profit_label', 'Target')}:{plan['take_profit']}"
     )
 
 

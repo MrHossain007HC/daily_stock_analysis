@@ -216,6 +216,7 @@ journalctl -u stock-analyzer -f
 | `SERPAPI_API_KEYS` | - | SerpAPI realtime financial news search (recommended) |
 | `TAVILY_API_KEYS` | - | Tavily news search (optional) |
 | `MINIMAX_API_KEYS` | - | MiniMax search (optional) |
+| `APIFY_TOKEN` | - | Apify last-resort search (optional) |
 
 ---
 
@@ -392,6 +393,7 @@ Add these Secrets:
 | `BOCHA_API_KEYS` | Bocha Search API Key | Optional |
 | `BRAVE_API_KEYS` | Brave Search API Key | Optional |
 | `MINIMAX_API_KEYS` | MiniMax Coding Plan Web Search | Optional |
+| `APIFY_TOKEN` | Apify last-resort search | Optional |
 | `TUSHARE_TOKEN` | Tushare Token | Optional |
 | `GEMINI_MODEL` | Model name (default gemini-2.0-flash) | Optional |
 

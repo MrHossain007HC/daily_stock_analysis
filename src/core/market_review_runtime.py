@@ -106,6 +106,7 @@ def build_market_review_runtime(
                 False,
             ),
             searxng_timeout_seconds=getattr(config, "searxng_timeout_seconds", None),
+            apify_tokens=getattr(config, "apify_tokens", None),
             news_max_age_days=getattr(config, "news_max_age_days", 3),
             news_strategy_profile=getattr(config, "news_strategy_profile", "short"),
         )

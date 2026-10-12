@@ -35,35 +35,32 @@ const StrategyItem: React.FC<StrategyItemProps> = ({
 );
 
 /**
- * 策略点位区组件 - 终端风格
+ * 策略计划区：始终展示策略名 + 点位，缺失值为 —。
  */
 export const ReportStrategy: React.FC<ReportStrategyProps> = ({ strategy, language = 'zh' }) => {
-  if (!strategy) {
-    return null;
-  }
-
   const reportLanguage = normalizeReportLanguage(language);
   const text = getReportText(reportLanguage);
+  const plan = strategy ?? {};
 
   const strategyItems = [
     {
       label: text.idealBuy,
-      value: strategy.idealBuy,
+      value: plan.idealBuy,
       tone: '--home-strategy-buy',
     },
     {
       label: text.secondaryBuy,
-      value: strategy.secondaryBuy,
+      value: plan.secondaryBuy,
       tone: '--home-strategy-secondary',
     },
     {
       label: text.stopLoss,
-      value: strategy.stopLoss,
+      value: plan.stopLoss,
       tone: '--home-strategy-stop',
     },
     {
       label: text.takeProfit,
-      value: strategy.takeProfit,
+      value: plan.takeProfit,
       tone: '--home-strategy-take',
     },
   ];
@@ -72,7 +69,7 @@ export const ReportStrategy: React.FC<ReportStrategyProps> = ({ strategy, langua
     <Card variant="bordered" padding="md" className="home-panel-card">
       <DashboardPanelHeader
         eyebrow={text.strategyPoints}
-        title={text.sniperLevels}
+        title={plan.strategyName || text.sniperLevels}
         className="mb-3"
       />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -80,6 +77,11 @@ export const ReportStrategy: React.FC<ReportStrategyProps> = ({ strategy, langua
           <StrategyItem key={item.label} {...item} />
         ))}
       </div>
+      {plan.entryPlan ? (
+        <p className="mt-3 text-sm text-secondary-text">
+          {text.entryPlan}: {plan.entryPlan}
+        </p>
+      ) : null}
     </Card>
   );
 };

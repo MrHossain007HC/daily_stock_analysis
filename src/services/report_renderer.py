@@ -33,6 +33,8 @@ from src.report_language import (
     localize_trend_prediction,
     normalize_report_language,
     normalize_strategy_synthesis_payload,
+    resolve_strategy_plan,
+    format_strategy_plan_compact,
     strategy_invalid_opinion_count,
 )
 from src.schemas.decision_action import (
@@ -247,6 +249,8 @@ def render(
         "strategy_invalid_opinion_count": strategy_invalid_opinion_count,
         "signal_attribution_has_content": signal_attribution_has_content,
         "signal_attribution_weight_items": signal_attribution_weight_items,
+        "resolve_strategy_plan": resolve_strategy_plan,
+        "format_strategy_plan_compact": format_strategy_plan_compact,
     }
     if extra_context:
         safe_extra_context = dict(extra_context)

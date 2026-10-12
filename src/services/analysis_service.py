@@ -17,6 +17,7 @@ from typing import Optional, Dict, Any, Callable, List
 
 from src.repositories.analysis_repo import AnalysisRepository
 from src.report_language import (
+    build_report_strategy_payload,
     get_sentiment_label,
     get_localized_stock_name,
     localize_operation_advice,
@@ -260,12 +261,11 @@ class AnalysisService:
                 "sentiment_score": result.sentiment_score,
                 "sentiment_label": sentiment_label,
             },
-            "strategy": {
-                "ideal_buy": sniper_points.get("ideal_buy"),
-                "secondary_buy": sniper_points.get("secondary_buy"),
-                "stop_loss": sniper_points.get("stop_loss"),
-                "take_profit": sniper_points.get("take_profit"),
-            },
+            "strategy": build_report_strategy_payload(
+                result,
+                report_language,
+                extra=sniper_points,
+            ),
             "details": {
                 "news_summary": result.news_summary,
                 "empty_news_disclosure": empty_news_disclosure(result, report_language),

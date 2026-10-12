@@ -315,6 +315,7 @@ class TestAskCommandMultiStock(unittest.TestCase):
 
         text = AskCommand._format_stock_result("600519", dashboard, "raw content")
 
+        self.assertIn("策略计划", text)
         self.assertIn("**关键点位**", text)
         self.assertIn("ideal_buy=10.0", text)
         self.assertIn("secondary_buy=9.8", text)
