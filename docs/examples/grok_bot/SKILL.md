@@ -1,59 +1,46 @@
 ---
 name: daily-stock-analysis
-description: 调用 daily_stock_analysis API 做股票分析。当用户说「分析茅台」「analyze AAPL」「帮我看看 600519」或要大盘复盘时使用。优先用股票代码。
+description: Call DSA REST for stock analysis. Prefer DecisionSignal. Top-5 WR strategies only. Compact JSON replies.
 ---
 
-# daily_stock_analysis
+# DSA Grok Bot
 
-本 Skill 供 Grok Bot（2026-08-11 AI teammate）使用。通过 HTTP 调用已部署的 DSA，不要把 Bot 配成 LiteLLM provider。
+Need `DSA_BASE_URL` (no trailing slash). Bot consumes DSA REST only. Never call Apify. Never set `GROK_BOT_*`. Do not use LiteLLM / xAI as DSA.
 
-需要环境变量 `DSA_BASE_URL`（DSA API 根地址，无尾斜杠）。
+## Roster (only these skills)
 
-## 何时使用
+| id | WR | use |
+| --- | --- | --- |
+| `brk55_mom_wr627` | 62.7% | 55d high + momentum |
+| `brk55_wr614` | 61.4% | 55d high |
+| `bb_reclaim_brk55_wr609` | 60.9% | BB reclaim then 55d high |
+| `patience_named_reason_wr603` | 60.3% | wait for named reason |
+| `superbot_learner_wr548` | 54.8% | trend+news learner |
 
-- 分析单只或多只股票
-- 查询某股最新 DecisionSignal（早报 / 盯盘 Routine）
-- 大盘复盘
+Do not load Weather / Adaptive / Tactical or other builtin YAML. One skill per call.
 
-## 工作流程
+## Flow
 
-1. 提取股票代码：A股 6 位（`600519`）、港股 `hk00700`、美股 `AAPL`、台股 `.TW` / `.TWO`。只有中文名时先提示用户给代码，或使用常见映射（茅台 → `600519`）。
-2. 需要完整分析时 POST `{DSA_BASE_URL}/api/v1/analysis/analyze`。**Routine 或预计超过 Bot HTTP 超时的分析，从一开始用异步**，不要先同步再改发异步：同步超时后服务端 `_handle_sync_analysis` 仍会继续跑且不进 `TaskQueue`，再发 `async_mode: true` 会绕过队列去重，重复计费和推送。
+1. Parse code: A-share 6 digits, HK `hk00700`, US `AAPL`. If only a Chinese name, ask for the code.
+2. Default: `GET {DSA_BASE_URL}/api/v1/decision-signals/latest/{stock_code}`. Skip re-analysis when a fresh signal exists.
+3. Full run only if user asks to re-analyze or no signal: `POST {DSA_BASE_URL}/api/v1/analysis/analyze` with `async_mode: true` from the first request.
 
 ```json
-{
-  "stock_code": "<code>",
-  "report_type": "detailed",
-  "force_refresh": true,
-  "async_mode": true
-}
+{"stock_code":"<code>","report_type":"simple","force_refresh":true,"async_mode":true,"notify":true,"skills":["brk55_mom_wr627"]}
 ```
 
-返回 202 + `task_id` 后轮询 `GET {DSA_BASE_URL}/api/v1/analysis/status/{task_id}`，直到 `status: completed`。完成报告在 `result.report`，不要读响应根上的 `report`。
+Poll `GET {DSA_BASE_URL}/api/v1/analysis/status/{task_id}` until `completed`. Report is `result.report` (not root `report`).
+4. Market review: `POST .../market-review` → 202 `task_id` → same status URL → `market_review_report`.
+5. Health: `GET {DSA_BASE_URL}/api/health`.
 
-仅当 Bot HTTP 超时 ≥300 秒、且用户在等单次同步结果时，才用 `async_mode: false`。同步超时后不要改发异步重跑；先查询该股是否已有进行中任务（409 / status），或读最新 DecisionSignal。
+Never sync-timeout then retry async. On 409 use `existing_task_id`.
 
-3. 只需最新建议、不要重跑分析时：`GET {DSA_BASE_URL}/api/v1/decision-signals/latest/{stock_code}`。
-4. 大盘复盘：`POST {DSA_BASE_URL}/api/v1/analysis/market-review` 固定返回 202 + `task_id`，不是复盘正文。轮询同一条 status 接口，完成后读顶层 `market_review_report` 或 `market_review_payload`（不在 `result.report`）。
-5. 健康检查失败先 `GET {DSA_BASE_URL}/api/health`。
+## Reply (≤120 tokens)
 
-## 如何呈现结果
+Always include the strategy plan (name+WR, ideal_buy, stop, target, entry). Use JSON:
 
-- 同步分析：`report.summary.operation_advice`、`trend_prediction`、`analysis_summary`
-- 异步分析：`result.report.summary.operation_advice`、`result.report.summary.trend_prediction`、`result.report.summary.analysis_summary`
-- 结构化动作：`action` / `action_label`（`buy|add|hold|reduce|sell|watch|avoid|alert`）；异步时在 `result.report.summary`
-- 计划：同步 `report.strategy.ideal_buy` / `stop_loss` / `take_profit`；异步 `result.report.strategy.*`
-- 大盘复盘：`market_review_report`（文本）或 `market_review_payload`（结构化）
-- 缺字段时回退 `operation_advice`；旧三态统计仍看 `decision_type`
-- DecisionSignal 只展示建议，不下单、不调仓
+```json
+{"code":"AAPL","skill":"brk55_mom_wr627","wr":"62.7%","action":"watch","plan":{"entry":"n/a","ideal_buy":"n/a","stop":"n/a","target":"n/a"},"why":""}
+```
 
-## 错误
-
-| 状态 | 处理 |
-| --- | --- |
-| 连接失败 | 检查 DSA 是否在跑、`DSA_BASE_URL` 是否正确 |
-| 400 | 检查 `stock_code` |
-| 409 | 该股正在分析，查已有 `existing_task_id` 的 status；不要另开一条分析 |
-| 500 | 看 DSA 日志；确认 `LITELLM_MODEL` 与对应 Key（含可选 `XAI_API_KEY`） |
-
-若 `ADMIN_AUTH_ENABLED=true`，当前 API 只认 Cookie，不认 Bearer。不要把 `XAI_API_KEY` 当作 DSA API 密钥。
+Read `action`/`action_label` and `report.strategy.ideal_buy|stop_loss|take_profit` (async prefix `result.`). DecisionSignal is advice only. Do not place orders.

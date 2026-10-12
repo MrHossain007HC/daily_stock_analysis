@@ -1127,7 +1127,7 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
     },
     "MINIMAX_API_KEYS": {
         "title": "MiniMax API Key",
-        "description": "MiniMax API key (search priority: Bocha > Tavily > Brave > SerpAPI > MiniMax > SearXNG).",
+        "description": "MiniMax API key (search priority: Anspire > Bocha > Tavily > Brave > SerpAPI > MiniMax > SearXNG > Apify).",
         "category": "data_source",
         "data_type": "string",
         "ui_control": "password",
@@ -1183,6 +1183,31 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "options": [],
         "validation": {},
         "display_order": 53,
+    },
+    "APIFY_TOKEN": {
+        "title": "Apify Token",
+        "description": "Optional Apify API token used as last-resort news search. When set, DSA runs rag-web-browser, web-fetch, and yahoo-finance-scraper Actors and compresses hits. Grok Bot must not call Apify directly.",
+        "category": "data_source",
+        "data_type": "string",
+        "ui_control": "password",
+        "is_sensitive": True,
+        "is_required": False,
+        "is_editable": True,
+        "default_value": None,
+        "options": [],
+        "validation": {"multi_value": True, "delimiter": ","},
+        "display_order": 54,
+        "help_key": "settings.data_source.search_api_keys",
+        "examples": [
+            "APIFY_TOKEN=apify_api_xxxx",
+        ],
+        "docs": [
+            {
+                "label": "完整指南：搜索服务配置",
+                "href": "https://github.com/ZhuLinsen/daily_stock_analysis/blob/main/docs/full-guide.md#搜索服务配置",
+            },
+        ],
+        "warning_codes": ["secret_value", "comma_separated_keys"],
     },
     "ENABLE_REALTIME_QUOTE": {
         "title": "Enable Realtime Quote",
@@ -4789,6 +4814,14 @@ _FIELD_HELP_METADATA: Dict[str, Dict[str, Any]] = {
         "docs": _DOC_FULL_GUIDE_SEARCH,
         "warning_codes": ["public_instance_stability"],
     },
+    "APIFY_TOKEN": {
+        "help_key": "settings.data_source.search_api_keys",
+        "examples": [
+            "APIFY_TOKEN=apify_api_xxxx",
+        ],
+        "docs": _DOC_FULL_GUIDE_SEARCH,
+        "warning_codes": ["secret_value", "comma_separated_keys"],
+    },
     "BIAS_THRESHOLD": {
         "help_key": "settings.data_source.BIAS_THRESHOLD",
         "examples": [
@@ -5142,6 +5175,7 @@ def _infer_category(key: str) -> str:
             "BOCHA",
             "ANSPIRE",
             "SEARXNG",
+            "APIFY",
             "NEWS_",
             "BIAS_",
         )

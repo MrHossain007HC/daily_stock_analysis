@@ -132,8 +132,19 @@ class TestReportRenderer(unittest.TestCase):
         out = render("markdown", [r], summary_only=False)
         self.assertIsNotNone(out)
         self.assertIn("核心结论", out)
-        self.assertIn("作战计划", out)
+        self.assertIn("策略计划", out)
         self.assertNotIn("盘中决策护栏", out)
+
+    def test_render_markdown_always_includes_strategy_plan_without_sniper(self) -> None:
+        r = _make_result(dashboard={"core_conclusion": {"one_sentence": "观望"}})
+        out = render("markdown", [r], summary_only=False)
+        self.assertIsNotNone(out)
+        self.assertIn("策略计划", out)
+        self.assertIn("N/A", out)
+
+        summary = render("markdown", [r], summary_only=True)
+        self.assertIsNotNone(summary)
+        self.assertIn("策略计划", summary)
 
     def test_render_markdown_omits_decision_signal_excerpt(self) -> None:
         """Markdown reports omit the duplicated DecisionSignal excerpt."""

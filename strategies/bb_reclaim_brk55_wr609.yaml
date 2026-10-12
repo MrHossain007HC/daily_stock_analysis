@@ -1,0 +1,23 @@
+# Bollinger Reclaim + Break 55 / 布林收回+突破55  WR60.9%
+
+name: bb_reclaim_brk55_wr609
+display_name: BB Reclaim BRK55 WR60.9%
+description: Bollinger band reclaim then 55-day high break. Sel WR 60.9% PF 2.71. Grok Bot top-5 pack.
+category: reversal
+core_rules: [2, 4, 6]
+required_tools:
+  - get_daily_history
+  - analyze_trend
+aliases: [bb_reclaim, bollinger_reclaim, WR60.9]
+default_active: false
+default_router: false
+default_priority: 13
+market_regimes: [volatile, trending_up]
+
+instructions: |
+  **BB Reclaim BRK55 WR60.9%** (Sel PF 2.71). Keep output short.
+
+  Entry: reclaim Bollinger mid/upper after a lower-band dip, THEN close > 55-day high.
+  Filter: skip failed reclaim (close back below mid). Do not chase if bias to MA5 > 5%.
+  Exit: take-profit ~2.5R, stop ~2.0R or close below BB mid, time-stop hold_days.
+  Output: action + ideal_buy + stop_loss + take_profit + 1-line plan. Name this strategy and WR60.9% in buy_reason.

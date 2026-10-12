@@ -16,8 +16,8 @@
 ## 推荐对接顺序
 
 1. 先让 DSA API 长期可访问：`python main.py --serve-only` 或 Docker。GitHub Actions 只做定时任务，不长期暴露 API。
-2. 在 Grok Bot 里放一条 Skill（可直接改 [openclaw Skill](openclaw-skill-integration.md) 的 `SKILL.md` 示例，或用 [`docs/examples/grok_bot/SKILL.md`](examples/grok_bot/SKILL.md)）。
-3. 需要盘中盯盘 / 早报时，用 Bot Routine 调 `DecisionSignal` 查询，而不是反复跑完整分析。
+2. 在 Grok Bot 里放一条 Skill（用 [`docs/examples/grok_bot/SKILL.md`](examples/grok_bot/SKILL.md)），并按 [`desks.md`](examples/grok_bot/desks.md) 为每个 top-5 策略建一条 Routine。只传这 5 个 `skills` id（名称含胜率），不要加载 Weather / Adaptive / Tactical 或其他 builtin YAML。
+3. 需要盘中盯盘 / 早报时，用 Bot Routine 调 `DecisionSignal` 查询，而不是反复跑完整分析。回复保持 compact JSON，并始终带上策略计划（策略名+胜率、ideal_buy/stop/target/entry）。邮件通知由 DSA 渲染，同样始终包含策略计划。
 4. 只有 Bot 已经能稳定调通 HTTP 之后，才考虑把同一组接口挂到 MCP Connector。本仓库 **P0 不提供 MCP server**。
 
 ## Skill：触发个股分析
@@ -30,9 +30,11 @@ Content-Type: application/json
 
 {
   "stock_code": "600519",
-  "report_type": "detailed",
+  "report_type": "simple",
   "force_refresh": true,
-  "async_mode": true
+  "async_mode": true,
+  "notify": true,
+  "skills": ["brk55_mom_wr627"]
 }
 ```
 
@@ -86,7 +88,8 @@ Grok Bot Skill 正文见 [`docs/examples/grok_bot/SKILL.md`](examples/grok_bot/S
 - 不把 Grok Bot 注册成 LiteLLM managed channel。
 - 不新增 `GROK_BOT_*` 环境变量。
 - 不复制一套平行 `DecisionSignal` / `AnalysisContextPack` schema。
-- 不在本页承诺某个 `grok-*` 型号在当前 `litellm` 约束内一定可用。型号以 [xAI 文档](https://docs.x.ai/docs) 为准，并用 `python scripts/check_env.py --llm` 实测。
+- Bot 不直接调用 Apify。可选 `APIFY_TOKEN` 只给 DSA `SearchService` 做最后搜索兜底。
+- 不在本页承诺某个 `grok-*` 型号在当前 `litellm` 约束内一定可用。型号以 [xAI 文档](https://docs.x.ai/docs) 为准，并用 `python scripts/check_env.py --llm` 实测。桌面 Routine 也不要写死 grok 模型 id。
 
 ## 最小验收
 

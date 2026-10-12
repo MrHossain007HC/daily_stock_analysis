@@ -9,6 +9,7 @@
 **📊 {{ labels.summary_heading }}**
 {% for e in enriched %}
 {{ e.signal_emoji }} **{{ e.stock_name }}({{ e.result.code }})**: {{ e.signal_text }} | {{ labels.score_label }} {{ e.result.sentiment_score }} | {{ e.localized_trend_prediction }}
+📋 {{ format_strategy_plan_compact(e.result, report_language) }}
 {% if e.empty_news_disclosure %}
 {{ e.empty_news_disclosure }}
 {% endif %}
@@ -51,14 +52,7 @@
 {% endfor %}
 {% endif %}
 
-{% set sniper = battle.get('sniper_points', {}) if battle else {} %}
-{% if sniper.ideal_buy or sniper.stop_loss or sniper.take_profit %}
-{% set ns = namespace(parts=[]) %}
-{% if sniper.ideal_buy %}{% set ns.parts = ns.parts + ['🎯' ~ labels.ideal_buy_label ~ ':' ~ (sniper.ideal_buy|string)[:15]] %}{% endif %}
-{% if sniper.stop_loss %}{% set ns.parts = ns.parts + ['🛑' ~ labels.stop_loss_label ~ ':' ~ (sniper.stop_loss|string)[:15]] %}{% endif %}
-{% if sniper.take_profit %}{% set ns.parts = ns.parts + ['🎊' ~ labels.take_profit_label ~ ':' ~ (sniper.take_profit|string)[:15]] %}{% endif %}
-{{ ns.parts|join(' | ') }}
-{% endif %}
+📋 {{ format_strategy_plan_compact(result, report_language) }}
 
 {% set pos_advice = core.get('position_advice', {}) if core else {} %}
 {% if pos_advice %}

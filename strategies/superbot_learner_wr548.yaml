@@ -1,0 +1,24 @@
+# Super Bot Learner / Super Bot 学习器  WR54.8%
+
+name: superbot_learner_wr548
+display_name: Super Bot Learner WR54.8%
+description: Grok Arena Super Bot. Paper WR 54.8% PF 1.28. Adaptive learner, still rule-bound. Grok Bot top-5 pack.
+category: framework
+core_rules: [2, 3, 5]
+required_tools:
+  - get_daily_history
+  - analyze_trend
+  - search_stock_news
+aliases: [superbot, super_bot, WR54.8]
+default_active: false
+default_router: false
+default_priority: 15
+market_regimes: [trending_up, volatile]
+
+instructions: |
+  **Super Bot Learner WR54.8%** (paper PF 1.28). Keep output short.
+
+  Combine trend + news + risk veto. Upgrade confidence only when MA5>MA10>MA20 AND news is not a veto.
+  If conflict, prefer hold/watch over a forced trade.
+  Exit: 2.5R / 2.0R / time-stop; news veto can flatten immediately.
+  Output: action + ideal_buy + stop_loss + take_profit + 1-line plan. Name this strategy and WR54.8% in buy_reason.
