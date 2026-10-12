@@ -2,7 +2,7 @@
 
 给 2026-08-11 [Grok Bot](https://x.ai/bot) 用的最小 Skill 包。只调用 DSA 已有 REST，不引入新 API、`GROK_BOT_*` 环境变量或 MCP server。Bot 不直接调 Apify。
 
-把 [`SKILL.md`](SKILL.md) 拷进 Bot 的 Skills 目录，按 [`desks.md`](desks.md) 为每个模型建一条 Routine（一 desk 一 skill）。设置 `DSA_BASE_URL`（例如 `http://127.0.0.1:8000`），并先让 DSA 以 `python main.py --serve-only` 或 Docker 长期运行。
+把 [`SKILL.md`](SKILL.md) 拷进 Bot 的 Skills 目录，按 [`desks.md`](desks.md) 为每个模型建一条 Routine（一 desk 一 skill）。设置 `DSA_BASE_URL`（例如 `http://127.0.0.1:8000`），并先让 DSA 以 `python main.py --serve-only` 或 Docker 长期运行。Web / 桌面端策略选择器会标出这 5 个 WR 策略，报告页始终展示策略计划。
 
 ## Top 5 roster（名称含胜率）
 

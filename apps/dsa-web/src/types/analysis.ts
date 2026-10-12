@@ -120,10 +120,12 @@ export interface ReportSummary {
 
 /** Strategy section */
 export interface ReportStrategy {
+  strategyName?: string;
   idealBuy?: string;
   secondaryBuy?: string;
   stopLoss?: string;
   takeProfit?: string;
+  entryPlan?: string;
 }
 
 export interface RelatedBoard {

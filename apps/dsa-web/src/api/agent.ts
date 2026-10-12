@@ -44,6 +44,7 @@ export interface SkillInfo {
   id: string;
   name: string;
   description: string;
+  grok_bot_pack?: boolean;
 }
 
 export interface SkillsResponse {

@@ -5,7 +5,7 @@ description: Call DSA REST for stock analysis. Prefer DecisionSignal. Top-5 WR s
 
 # DSA Grok Bot
 
-Need `DSA_BASE_URL` (no trailing slash). Bot consumes DSA REST only. Never call Apify. Never set `GROK_BOT_*`. Do not use LiteLLM / xAI as DSA.
+Need `DSA_BASE_URL` (no trailing slash). Bot consumes DSA REST only. Never call Apify. Never set `GROK_BOT_*`. Do not use LiteLLM / xAI as DSA. Paste this Skill into Grok Bot and keep one Routine per desk. DSA web/desktop always shows the same strategy plan.
 
 ## Roster (only these skills)
 

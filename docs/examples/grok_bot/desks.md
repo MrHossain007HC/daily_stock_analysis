@@ -2,7 +2,7 @@
 
 One desk = one top-5 skill. Do not hardcode a `grok-*` model id. DSA already has the YAML; the Bot only passes `skills`.
 
-Set `DSA_BASE_URL`. Prefer DecisionSignal. Re-analyze only on the morning Routine or when asked. Keep replies as the compact JSON in `SKILL.md`. Mail/notify is DSA-side and always includes the strategy plan.
+Set `DSA_BASE_URL`. Prefer DecisionSignal. Re-analyze only on the morning Routine or when asked. Keep replies as the compact JSON in `SKILL.md`. Mail/notify and the DSA web/desktop report always include the strategy plan.
 
 ## Shared poll
 

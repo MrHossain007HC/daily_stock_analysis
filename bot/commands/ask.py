@@ -13,6 +13,7 @@ import logging
 import re
 import time
 import uuid
+from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple
 
 from bot.commands.base import BotCommand
@@ -547,6 +548,10 @@ class AskCommand(BotCommand):
         battle_plan = dashboard_block.get("battle_plan")
         if not isinstance(battle_plan, dict):
             battle_plan = {}
+        from src.report_language import format_strategy_plan_compact
+
+        plan_source = dashboard_block or dashboard
+        lines.append(format_strategy_plan_compact(SimpleNamespace(dashboard=plan_source), "zh"))
         sniper = battle_plan.get("sniper_points")
         if isinstance(sniper, dict):
             price_parts = []

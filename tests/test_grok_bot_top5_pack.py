@@ -9,19 +9,15 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.agent.skills.base import load_skill_from_yaml, load_skills_from_directory
+from src.agent.skills.grok_bot_pack import GROK_BOT_TOP5_SKILL_IDS
 from src.analyzer import AnalysisResult
 from src.config import Config
 from src.notification import NotificationService
 from src.report_language import format_strategy_plan_compact, resolve_strategy_plan
+from src.services.analysis_service import AnalysisService
 
 
-GROK_BOT_TOP5 = (
-    "brk55_mom_wr627",
-    "brk55_wr614",
-    "bb_reclaim_brk55_wr609",
-    "patience_named_reason_wr603",
-    "superbot_learner_wr548",
-)
+GROK_BOT_TOP5 = GROK_BOT_TOP5_SKILL_IDS
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -130,6 +126,49 @@ class TestGrokBotTop5Pack(unittest.TestCase):
         self.assertIn("策略计划", summary_mail)
         self.assertIn("N/A", summary_mail)
         self.assertNotIn("核心结论", summary_mail)
+
+    def test_analysis_response_always_includes_strategy_plan(self) -> None:
+        result = AnalysisResult(
+            code="AAPL",
+            name="Apple",
+            sentiment_score=72,
+            trend_prediction="看多",
+            operation_advice="买入",
+            dashboard={
+                "strategy_synthesis": {
+                    "final_signal": "buy",
+                    "supporting_skills": [{"skill_id": "brk55_mom_wr627", "signal": "buy"}],
+                },
+                "battle_plan": {
+                    "sniper_points": {
+                        "ideal_buy": "180",
+                        "stop_loss": "170",
+                        "take_profit": "195",
+                    },
+                },
+            },
+        )
+        payload = AnalysisService()._build_analysis_response(result, "q-plan", report_type="detailed")
+        strategy = payload["report"]["strategy"]
+        self.assertIn("WR62.7%", strategy["strategy_name"])
+        self.assertEqual(strategy["ideal_buy"], "180")
+        self.assertEqual(strategy["stop_loss"], "170")
+        self.assertEqual(strategy["take_profit"], "195")
+
+        empty = AnalysisService()._build_analysis_response(
+            AnalysisResult(
+                code="AAPL",
+                name="Apple",
+                sentiment_score=50,
+                trend_prediction="震荡",
+                operation_advice="观望",
+                dashboard={},
+            ),
+            "q-empty",
+            report_type="detailed",
+        )
+        self.assertIn("strategy", empty["report"])
+        self.assertIsNone(empty["report"]["strategy"]["ideal_buy"])
 
 
 if __name__ == "__main__":

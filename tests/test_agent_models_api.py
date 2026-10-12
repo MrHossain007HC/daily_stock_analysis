@@ -338,6 +338,7 @@ class AgentSkillsEndpointTestCase(unittest.TestCase):
                     "id": "bull_trend",
                     "name": "多头趋势",
                     "description": "趋势跟随",
+                    "grok_bot_pack": False,
                 }
             ],
         )

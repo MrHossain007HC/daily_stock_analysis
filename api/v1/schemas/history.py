@@ -177,10 +177,12 @@ class ReportSummary(BaseModel):
 class ReportStrategy(BaseModel):
     """策略点位区"""
 
+    strategy_name: Optional[str] = Field(None, description="策略名（含胜率）")
     ideal_buy: Optional[str] = Field(None, description="理想买入价")
     secondary_buy: Optional[str] = Field(None, description="第二买入价")
     stop_loss: Optional[str] = Field(None, description="止损价")
     take_profit: Optional[str] = Field(None, description="止盈价")
+    entry_plan: Optional[str] = Field(None, description="建仓策略")
 
 
 class AnalysisContextPackOverviewSubject(BaseModel):

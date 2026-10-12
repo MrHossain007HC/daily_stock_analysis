@@ -16,7 +16,7 @@
 ## 推荐对接顺序
 
 1. 先让 DSA API 长期可访问：`python main.py --serve-only` 或 Docker。GitHub Actions 只做定时任务，不长期暴露 API。
-2. 在 Grok Bot 里放一条 Skill（用 [`docs/examples/grok_bot/SKILL.md`](examples/grok_bot/SKILL.md)），并按 [`desks.md`](examples/grok_bot/desks.md) 为每个 top-5 策略建一条 Routine。只传这 5 个 `skills` id（名称含胜率），不要加载 Weather / Adaptive / Tactical 或其他 builtin YAML。
+2. 在 Grok Bot 里放一条 Skill（用 [`docs/examples/grok_bot/SKILL.md`](examples/grok_bot/SKILL.md)），并按 [`desks.md`](examples/grok_bot/desks.md) 为每个 top-5 策略建一条 Routine。只传这 5 个 `skills` id（名称含胜率），不要加载 Weather / Adaptive / Tactical 或其他 builtin YAML。DSA Web / 桌面端会列出全部 builtin 策略，并给这 5 个 WR 策略加标记；报告页始终展示策略计划。
 3. 需要盘中盯盘 / 早报时，用 Bot Routine 调 `DecisionSignal` 查询，而不是反复跑完整分析。回复保持 compact JSON，并始终带上策略计划（策略名+胜率、ideal_buy/stop/target/entry）。邮件通知由 DSA 渲染，同样始终包含策略计划。
 4. 只有 Bot 已经能稳定调通 HTTP 之后，才考虑把同一组接口挂到 MCP Connector。本仓库 **P0 不提供 MCP server**。
 

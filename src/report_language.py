@@ -1149,6 +1149,38 @@ def resolve_strategy_plan(result: Any, language: Optional[str] = None) -> Dict[s
     }
 
 
+def build_report_strategy_payload(
+    result: Any,
+    language: Optional[str] = None,
+    extra: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Optional[str]]:
+    """API/Web strategy-plan payload. Missing points stay None (UI shows em-dash)."""
+    labels = get_report_labels(language)
+    none_text = labels.get("none_label", "N/A")
+    plan = resolve_strategy_plan(result, language)
+    overlay = extra if isinstance(extra, dict) else {}
+
+    def _opt(value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return str(value)
+        text = str(value).strip()
+        if not text or text in {"N/A", none_text, "—", "-"}:
+            return None
+        return text
+
+    payload = {
+        "strategy_name": _opt(overlay.get("strategy_name") or plan["strategy_name"]),
+        "ideal_buy": _opt(overlay.get("ideal_buy") or plan["ideal_buy"]),
+        "secondary_buy": _opt(overlay.get("secondary_buy") or plan["secondary_buy"]),
+        "stop_loss": _opt(overlay.get("stop_loss") or plan["stop_loss"]),
+        "take_profit": _opt(overlay.get("take_profit") or plan["take_profit"]),
+        "entry_plan": _opt(overlay.get("entry_plan") or plan["entry_plan"]),
+    }
+    return payload
+
+
 def format_strategy_plan_compact(result: Any, language: Optional[str] = None) -> str:
     """One-line strategy plan for summary / WeChat / brief mail.
 
