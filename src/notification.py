@@ -1366,6 +1366,7 @@ class NotificationService(
                     f"{labels['score_label']} {r.sentiment_score} | "
                     f"{localize_trend_prediction(r.trend_prediction, report_language)}"
                 )
+                _append_strategy_plan_block(report_lines, r, labels, report_language, compact=True)
                 if self._report_summary_only:
                     news_disclosure = self._empty_news_disclosure(r, report_language)
                     if news_disclosure:

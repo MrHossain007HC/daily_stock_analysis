@@ -125,6 +125,12 @@ class TestGrokBotTop5Pack(unittest.TestCase):
         self.assertIn("策略计划", mail)
         self.assertIn("N/A", mail)
 
+        service._report_summary_only = True
+        summary_mail = service.generate_dashboard_report([result], report_date="2026-10-12")
+        self.assertIn("策略计划", summary_mail)
+        self.assertIn("N/A", summary_mail)
+        self.assertNotIn("核心结论", summary_mail)
+
 
 if __name__ == "__main__":
     unittest.main()

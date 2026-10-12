@@ -940,6 +940,7 @@ class TestNotificationServiceReportGeneration(unittest.TestCase):
                 self.assertEqual(out.count("daily:AlphaFetcher"), 1)
                 self.assertNotIn("核心结论", out)
                 self.assertNotIn("detail-only plan", out)
+                self.assertIn("策略计划", out)
 
     @mock.patch("src.notification.get_config")
     def test_empty_template_output_falls_back_to_source_aware_reports(
