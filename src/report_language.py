@@ -241,14 +241,19 @@ _STRATEGY_SKILL_CANONICAL_MAP = {
     "wave_theory": "wave_theory",
     "波浪理论": "wave_theory",
     "brk55_mom_wr627": "brk55_mom_wr627",
+    "brk55 mom wr627": "brk55_mom_wr627",
     "brk55 mom wr62.7%": "brk55_mom_wr627",
     "brk55_wr614": "brk55_wr614",
+    "brk55 wr614": "brk55_wr614",
     "brk55 wr61.4%": "brk55_wr614",
     "bb_reclaim_brk55_wr609": "bb_reclaim_brk55_wr609",
+    "bb reclaim brk55 wr609": "bb_reclaim_brk55_wr609",
     "bb reclaim brk55 wr60.9%": "bb_reclaim_brk55_wr609",
     "patience_named_reason_wr603": "patience_named_reason_wr603",
+    "patience named reason wr603": "patience_named_reason_wr603",
     "patience named reason wr60.3%": "patience_named_reason_wr603",
     "superbot_learner_wr548": "superbot_learner_wr548",
+    "superbot learner wr548": "superbot_learner_wr548",
     "super bot learner wr54.8%": "superbot_learner_wr548",
 }
 
@@ -1145,7 +1150,11 @@ def resolve_strategy_plan(result: Any, language: Optional[str] = None) -> Dict[s
 
 
 def format_strategy_plan_compact(result: Any, language: Optional[str] = None) -> str:
-    """One-line strategy plan for summary / WeChat / brief mail."""
+    """One-line strategy plan for summary / WeChat / brief mail.
+
+    Omits entry_plan so ``summary_only`` reports do not restore detail-only
+    battle fields; full mail still shows entry in the strategy-plan table.
+    """
     labels = get_report_labels(language)
     plan = resolve_strategy_plan(result, language)
     return (
@@ -1153,8 +1162,7 @@ def format_strategy_plan_compact(result: Any, language: Optional[str] = None) ->
         f"{labels.get('strategy_name_label', 'Strategy')} {plan['strategy_name']} | "
         f"{labels.get('ideal_buy_label', 'Ideal Entry')}:{plan['ideal_buy']} | "
         f"{labels.get('stop_loss_label', 'Stop Loss')}:{plan['stop_loss']} | "
-        f"{labels.get('take_profit_label', 'Target')}:{plan['take_profit']} | "
-        f"{labels.get('entry_plan_label', 'Entry')}:{plan['entry_plan']}"
+        f"{labels.get('take_profit_label', 'Target')}:{plan['take_profit']}"
     )
 
 

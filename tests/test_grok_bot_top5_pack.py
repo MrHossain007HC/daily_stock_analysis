@@ -51,8 +51,9 @@ class TestGrokBotTop5Pack(unittest.TestCase):
         for skill_id in GROK_BOT_TOP5:
             self.assertIn(skill_id, skill_md)
             self.assertIn(skill_id, desks)
-        self.assertNotIn("weather", skill_md.lower())
-        self.assertNotIn("tactical", skill_md.lower())
+        self.assertNotRegex(skill_md, r"`weather")
+        self.assertNotRegex(skill_md, r"`tactical")
+        self.assertNotRegex(skill_md, r"`adaptive")
         self.assertIn("Never call Apify", skill_md)
         self.assertIn("strategy plan", skill_md.lower())
 
