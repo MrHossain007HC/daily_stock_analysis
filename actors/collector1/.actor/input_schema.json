@@ -1,0 +1,158 @@
+{
+    "title": "Collector1 input",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "mode": {
+            "title": "Mode",
+            "type": "string",
+            "description": "ingest_staged reads supplied public files. fetch_public downloads allowlisted URLs. both does staged files first.",
+            "enum": ["ingest_staged", "fetch_public", "both"],
+            "enumTitles": ["Staged files", "Public URLs", "Both"],
+            "default": "ingest_staged"
+        },
+        "documentUrls": {
+            "title": "Public document URLs",
+            "type": "array",
+            "description": "Allowlisted http(s) URLs for public financial documents or company pages. StockNow is rejected.",
+            "editor": "stringList",
+            "default": [],
+            "prefill": []
+        },
+        "eodUrls": {
+            "title": "Public EOD URLs",
+            "type": "array",
+            "description": "Allowlisted CSV, XLSX, or ZIP URLs for public end-of-day files.",
+            "editor": "stringList",
+            "default": [],
+            "prefill": []
+        },
+        "stagedFiles": {
+            "title": "Staged public files",
+            "type": "array",
+            "description": "Objects with sourceUrl, fileName, kind (eod, zip, financial_document, document_metadata), declaredMime, and optional contentBase64, symbol, title, expectedPeriod, sample.",
+            "editor": "json",
+            "default": [],
+            "prefill": []
+        },
+        "symbols": {
+            "title": "Trading codes",
+            "type": "array",
+            "description": "DSE trading codes to include in the coverage manifest. Absences stay unknown or non-trading, never proven-missing.",
+            "editor": "stringList",
+            "default": [],
+            "prefill": []
+        },
+        "sessions": {
+            "title": "Session dates",
+            "type": "array",
+            "description": "Trade dates to score for coverage. Use ISO dates or DSE day-month-year dates.",
+            "editor": "stringList",
+            "default": [],
+            "prefill": []
+        },
+        "dateFrom": {
+            "title": "Date from",
+            "type": "string",
+            "description": "Optional inclusive start date. Rows outside the range are quarantined and are not marked missing.",
+            "editor": "textfield"
+        },
+        "dateTo": {
+            "title": "Date to",
+            "type": "string",
+            "description": "Optional inclusive end date.",
+            "editor": "textfield"
+        },
+        "allowedHosts": {
+            "title": "Allowed public hosts",
+            "type": "array",
+            "description": "Hostname suffix allowlist. Defaults to dsebd.org and sec.gov.bd. Hosts containing stocknow are always removed.",
+            "editor": "stringList",
+            "default": ["dsebd.org", "sec.gov.bd"],
+            "prefill": ["dsebd.org", "sec.gov.bd"]
+        },
+        "maxRequests": {
+            "title": "Max requests",
+            "type": "integer",
+            "description": "Maximum public HTTP requests for this run.",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 200
+        },
+        "maxBytes": {
+            "title": "Max bytes",
+            "type": "integer",
+            "description": "Maximum total bytes accepted into the run.",
+            "default": 20000000,
+            "minimum": 1,
+            "maximum": 50000000
+        },
+        "maxRuntimeSecs": {
+            "title": "Max runtime seconds",
+            "type": "integer",
+            "description": "Stop the run and keep the remaining checkpoint when this many seconds have elapsed.",
+            "default": 120,
+            "minimum": 1,
+            "maximum": 300
+        },
+        "maxDownloadBytes": {
+            "title": "Max download bytes",
+            "type": "integer",
+            "description": "Maximum bytes for one response or staged file.",
+            "default": 8000000,
+            "minimum": 1,
+            "maximum": 15000000
+        },
+        "maxRedirects": {
+            "title": "Max redirects",
+            "type": "integer",
+            "description": "Each redirect is checked again for SSRF and the host allowlist.",
+            "default": 3,
+            "minimum": 0,
+            "maximum": 5
+        },
+        "minConcurrency": {
+            "title": "Minimum domain concurrency",
+            "type": "integer",
+            "description": "Starting per-domain concurrency. The runner stays sequential and uses this to scale politeness.",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 4
+        },
+        "maxConcurrency": {
+            "title": "Maximum domain concurrency",
+            "type": "integer",
+            "description": "Upper bound after successful responses. 429 responses cut the limit and apply backoff.",
+            "default": 2,
+            "minimum": 1,
+            "maximum": 4
+        },
+        "maxAttempts": {
+            "title": "Max attempts",
+            "type": "integer",
+            "description": "Retryable network failures stop after this many attempts and are not promoted.",
+            "default": 3,
+            "minimum": 1,
+            "maximum": 5
+        },
+        "resume": {
+            "title": "Resume from checkpoint",
+            "type": "boolean",
+            "description": "Reuse the input checkpoint or the CHECKPOINT key. Completed work is not run again.",
+            "default": true
+        },
+        "sample": {
+            "title": "Sample run",
+            "type": "boolean",
+            "description": "Mark every record as sample. Sample rows are not market data and cannot be verified annual reports.",
+            "default": false
+        },
+        "checkpoint": {
+            "title": "Checkpoint",
+            "type": "object",
+            "description": "Optional checkpoint from an earlier run. Version must be 1.",
+            "editor": "json"
+        }
+    },
+    "required": []
+}

@@ -1,0 +1,31 @@
+{
+    "actorKeyValueStoreSchemaVersion": 1,
+    "title": "Collector1 key-value store",
+    "description": "Resume checkpoint and run manifests. These records are metadata, not a verified annual-report archive.",
+    "collections": {
+        "checkpoint": {
+            "title": "Checkpoint",
+            "description": "Idempotent work queue. Done items are not reset or promoted.",
+            "key": "CHECKPOINT",
+            "contentTypes": ["application/json"]
+        },
+        "coverageManifest": {
+            "title": "Coverage manifest",
+            "description": "Observed, unknown, and explicitly non-trading sessions. provenMissing is always false.",
+            "key": "COVERAGE_MANIFEST",
+            "contentTypes": ["application/json"]
+        },
+        "failureManifest": {
+            "title": "Failure manifest",
+            "description": "Fetch and attempt failures. promoted is always false.",
+            "key": "FAILURE_MANIFEST",
+            "contentTypes": ["application/json"]
+        },
+        "runSummary": {
+            "title": "Run summary",
+            "description": "Request, byte, and runtime counters for this run.",
+            "key": "RUN_SUMMARY",
+            "contentTypes": ["application/json"]
+        }
+    }
+}

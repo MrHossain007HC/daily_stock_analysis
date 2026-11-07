@@ -1,0 +1,20 @@
+{
+    "mode": "ingest_staged",
+    "sample": true,
+    "maxRequests": 2,
+    "maxRuntimeSecs": 30,
+    "maxBytes": 1000000,
+    "maxDownloadBytes": 1000000,
+    "symbols": ["GP"],
+    "sessions": ["2024-01-15"],
+    "stagedFiles": [
+        {
+            "sourceUrl": "https://www.dsebd.org/",
+            "fileName": "smoke.csv",
+            "kind": "eod",
+            "declaredMime": "text/csv",
+            "sample": true,
+            "contentBase64": "VFJBRElORyBDT0RFLERBVEUsQ0xPU0VQLE5BVgpHUCwyMDI0LTAxLTE1LDI1MC41LC0xLjI1Cg=="
+        }
+    ]
+}

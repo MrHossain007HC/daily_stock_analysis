@@ -1,0 +1,36 @@
+{
+    "actorOutputSchemaVersion": 1,
+    "title": "Collector1 output",
+    "properties": {
+        "dataset": {
+            "type": "string",
+            "title": "Dataset",
+            "template": "{{links.apiDefaultDatasetUrl}}/items"
+        },
+        "overview": {
+            "type": "string",
+            "title": "Overview",
+            "template": "{{links.apiDefaultDatasetUrl}}/items?view=overview"
+        },
+        "checkpoint": {
+            "type": "string",
+            "title": "Checkpoint",
+            "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/CHECKPOINT"
+        },
+        "coverageManifest": {
+            "type": "string",
+            "title": "Coverage manifest",
+            "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/COVERAGE_MANIFEST"
+        },
+        "failureManifest": {
+            "type": "string",
+            "title": "Failure manifest",
+            "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/FAILURE_MANIFEST"
+        },
+        "runSummary": {
+            "type": "string",
+            "title": "Run summary",
+            "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/RUN_SUMMARY"
+        }
+    }
+}
