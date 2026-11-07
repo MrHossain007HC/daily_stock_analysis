@@ -1,0 +1,161 @@
+{
+    "actorSpecification": 1,
+    "fields": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+            "recordType": {"type": "string", "description": "eod_bar, company_profile, financial_document, coverage_gap, raw_receipt, duplicate_receipt, or fetch_failure.", "nullable": true, "example": "eod_bar"},
+            "lane": {"type": "string", "description": "raw, accepted, quarantine, or failure.", "nullable": true, "example": "accepted"},
+            "recordId": {"type": "string", "description": "Stable id for this lane and work item.", "nullable": true, "example": "example-record"},
+            "idempotencyKey": {"type": "string", "description": "Checkpoint key for this work item.", "nullable": true, "example": "example-key"},
+            "symbol": {"type": "string", "description": "Declared or explicitly labeled trading code. Conflicts are not renamed.", "nullable": true, "example": "GP"},
+            "detectedSymbol": {"type": "string", "description": "Trading code found in the file name or document text.", "nullable": true, "example": "GP"},
+            "tradeDate": {"type": "string", "description": "ISO trade date.", "nullable": true, "example": "2024-01-15"},
+            "open": {"type": "number", "description": "Opening price.", "nullable": true, "example": 10.5},
+            "high": {"type": "number", "description": "High price.", "nullable": true, "example": 11},
+            "low": {"type": "number", "description": "Low price.", "nullable": true, "example": 10},
+            "close": {"type": "number", "description": "Close price.", "nullable": true, "example": 10.75},
+            "ltp": {"type": "number", "description": "Last traded price.", "nullable": true, "example": 10.75},
+            "ycp": {"type": "number", "description": "Previous close.", "nullable": true, "example": 10.25},
+            "volume": {"type": "number", "description": "Share volume.", "nullable": true, "example": 1000},
+            "value": {"type": "number", "description": "Turnover value.", "nullable": true, "example": 10750},
+            "trades": {"type": "number", "description": "Trade count.", "nullable": true, "example": 12},
+            "nav": {"type": "number", "description": "Net asset value. Negative values are valid.", "nullable": true, "example": -1.25},
+            "sourceUrl": {"type": "string", "description": "Public source URL.", "nullable": true, "example": "https://www.dsebd.org/"},
+            "sourceHost": {"type": "string", "description": "Allowlisted source host.", "nullable": true, "example": "www.dsebd.org"},
+            "retrievedAt": {"type": "string", "description": "UTC timestamp for the run.", "nullable": true, "example": "2026-11-07T12:00:00+00:00"},
+            "contentSha256": {"type": "string", "description": "SHA-256 of the retrieved bytes.", "nullable": true, "example": "abc123"},
+            "contentLength": {"type": "number", "description": "Byte length of the payload.", "nullable": true, "example": 128},
+            "declaredMime": {"type": "string", "description": "Declared content type.", "nullable": true, "example": "text/csv"},
+            "detectedMime": {"type": "string", "description": "MIME detected from the bytes.", "nullable": true, "example": "text/csv"},
+            "mimeConsistent": {"type": "boolean", "description": "Whether the declared and detected types agree.", "nullable": true, "example": true},
+            "documentClaim": {"type": "string", "description": "metadata_only, unverified_document, verified_annual_report, or not_applicable.", "nullable": true, "example": "not_applicable"},
+            "verifiedAnnualReport": {"type": "boolean", "description": "True only for a downloaded, matched, consistent PDF annual report.", "nullable": true, "example": false},
+            "period": {"type": "string", "description": "Resolved reporting period label.", "nullable": true, "example": "FY2024"},
+            "periodStatus": {"type": "string", "description": "matched, resolved, mismatch, unresolved, or not_applicable.", "nullable": true, "example": "not_applicable"},
+            "companyMatch": {"type": "string", "description": "matched, mismatch, unresolved, or not_applicable.", "nullable": true, "example": "not_applicable"},
+            "dedupStatus": {"type": "string", "description": "canonical, duplicate, or not_applicable.", "nullable": true, "example": "canonical"},
+            "canonicalRecordId": {"type": "string", "description": "Id of the first record for this content hash or bar.", "nullable": true, "example": "example-canonical"},
+            "isCanonical": {"type": "boolean", "description": "False for duplicate or conflicting rows.", "nullable": true, "example": true},
+            "absenceStatus": {"type": "string", "description": "observed, unknown, or non_trading.", "nullable": true, "example": "unknown"},
+            "provenMissing": {"type": "boolean", "description": "Always false. Unknown and non-trading gaps are not proven missing.", "nullable": true, "example": false},
+            "foreignReport": {"type": "boolean", "description": "True when the document looks like a foreign filing.", "nullable": true, "example": false},
+            "fieldErrors": {
+                "type": "array",
+                "description": "Per-field validation errors. A negative NAV is not an error.",
+                "nullable": true,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "field": {"type": "string", "nullable": true, "description": "Field name."},
+                        "code": {"type": "string", "nullable": true, "description": "Error code."}
+                    },
+                    "required": [],
+                    "additionalProperties": true
+                }
+            },
+            "quarantineReasons": {"type": "array", "description": "Reasons the record was quarantined.", "nullable": true, "items": {"type": "string"}, "example": []},
+            "failureReason": {"type": "string", "description": "Fetch or attempt failure reason.", "nullable": true, "example": "http_404"},
+            "retryable": {"type": "boolean", "description": "Whether a later run may retry this item.", "nullable": true, "example": false},
+            "httpStatus": {"type": "number", "description": "HTTP status when a URL was fetched.", "nullable": true, "example": 200},
+            "retained": {"type": "boolean", "description": "Record was kept.", "nullable": true, "example": true},
+            "deleted": {"type": "boolean", "description": "Always false. Collector1 does not delete source records.", "nullable": true, "example": false},
+            "promoted": {"type": "boolean", "description": "Always false. Failures are not promoted.", "nullable": true, "example": false},
+            "sample": {"type": "boolean", "description": "True for sample input. Sample rows are not market data.", "nullable": true, "example": false},
+            "provenance": {
+                "type": "object",
+                "description": "Source URL, hash, MIME, and actor version.",
+                "nullable": true,
+                "properties": {
+                    "sourceUrl": {"type": "string", "nullable": true},
+                    "sourceHost": {"type": "string", "nullable": true},
+                    "retrievedAt": {"type": "string", "nullable": true},
+                    "httpStatus": {"type": "number", "nullable": true},
+                    "contentSha256": {"type": "string", "nullable": true},
+                    "contentLength": {"type": "number", "nullable": true},
+                    "declaredMime": {"type": "string", "nullable": true},
+                    "detectedMime": {"type": "string", "nullable": true},
+                    "actor": {"type": "string", "nullable": true},
+                    "actorVersion": {"type": "string", "nullable": true},
+                    "publicSource": {"type": "boolean", "nullable": true},
+                    "sample": {"type": "boolean", "nullable": true}
+                },
+                "required": [],
+                "additionalProperties": true
+            },
+            "title": {"type": "string", "description": "Document title supplied with the input.", "nullable": true, "example": "Annual Report 2024"}
+        },
+        "required": [],
+        "additionalProperties": true
+    },
+    "views": {
+        "overview": {
+            "title": "Overview",
+            "description": "Lane, identity, price, NAV, and document claim.",
+            "transformation": {
+                "fields": [
+                    "lane",
+                    "recordType",
+                    "symbol",
+                    "tradeDate",
+                    "close",
+                    "nav",
+                    "documentClaim",
+                    "verifiedAnnualReport",
+                    "absenceStatus",
+                    "provenMissing",
+                    "dedupStatus",
+                    "sourceUrl"
+                ]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "lane": {"label": "Lane", "format": "text"},
+                    "recordType": {"label": "Type", "format": "text"},
+                    "symbol": {"label": "Symbol", "format": "text"},
+                    "tradeDate": {"label": "Trade date", "format": "text"},
+                    "close": {"label": "Close", "format": "number"},
+                    "nav": {"label": "NAV", "format": "number"},
+                    "documentClaim": {"label": "Document claim", "format": "text"},
+                    "verifiedAnnualReport": {"label": "Verified annual", "format": "boolean"},
+                    "absenceStatus": {"label": "Absence", "format": "text"},
+                    "provenMissing": {"label": "Proven missing", "format": "boolean"},
+                    "dedupStatus": {"label": "Dedup", "format": "text"},
+                    "sourceUrl": {"label": "Source", "format": "link"}
+                }
+            }
+        },
+        "failures": {
+            "title": "Failures",
+            "description": "Quarantine and fetch failures. Nothing here is promoted.",
+            "transformation": {
+                "fields": [
+                    "lane",
+                    "recordType",
+                    "symbol",
+                    "sourceUrl",
+                    "failureReason",
+                    "quarantineReasons",
+                    "retryable",
+                    "promoted",
+                    "httpStatus"
+                ]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "lane": {"label": "Lane", "format": "text"},
+                    "recordType": {"label": "Type", "format": "text"},
+                    "symbol": {"label": "Symbol", "format": "text"},
+                    "sourceUrl": {"label": "Source", "format": "link"},
+                    "failureReason": {"label": "Failure", "format": "text"},
+                    "quarantineReasons": {"label": "Quarantine", "format": "array"},
+                    "retryable": {"label": "Retryable", "format": "boolean"},
+                    "promoted": {"label": "Promoted", "format": "boolean"},
+                    "httpStatus": {"label": "HTTP", "format": "number"}
+                }
+            }
+        }
+    }
+}
